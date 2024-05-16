@@ -9,17 +9,15 @@
 typedef struct Node {
     int row, col;
     int cost;
-    int heuristic;
     struct Node* parent;
 } Node;
 
 // Create a new node
-Node* create_node(int row, int col, int cost, int heuristic, Node* parent) {
+Node* create_node(int row, int col, int cost, Node* parent) {
     Node* new_node = (Node*)malloc(sizeof(Node));
     new_node->row = row;
     new_node->col = col;
     new_node->cost = cost;
-    new_node->heuristic = heuristic;
     new_node->parent = parent;
     return new_node;
 }
@@ -44,17 +42,12 @@ void get_neighbors(int row, int col, int neighbors[][2], int* count) {
     }
 }
 
-// Calculate Manhattan distance heuristic
-int manhattan_distance(int row1, int col1, int row2, int col2) {
-    return abs(row1 - row2) + abs(col1 - col2);
-}
-
-// Uniform Cost Search algorithm with heuristic
-Node* uniform_cost_search_with_heuristic(int maze[ROWS][COLS], int start_row, int start_col, int goal_row, int goal_col) {
+// Uniform Cost Search algorithm
+Node* uniform_cost_search(int maze[ROWS][COLS], int start_row, int start_col, int goal_row, int goal_col) {
     Node* priority_queue[1000];
     int pq_size = 0;
 
-    Node* start_node = create_node(start_row, start_col, 0, manhattan_distance(start_row, start_col, goal_row, goal_col), NULL);
+    Node* start_node = create_node(start_row, start_col, 0, NULL);
     priority_queue[pq_size++] = start_node;
 
     int explored[ROWS][COLS] = { 0 };
@@ -64,9 +57,7 @@ Node* uniform_cost_search_with_heuristic(int maze[ROWS][COLS], int start_row, in
         Node* current_node = priority_queue[0];
         int current_index = 0;
         for (int i = 1; i < pq_size; i++) {
-            int current_priority = priority_queue[i]->cost + priority_queue[i]->heuristic;
-            int node_priority = current_node->cost + current_node->heuristic;
-            if (current_priority < node_priority) {
+            if (priority_queue[i]->cost < current_node->cost) {
                 current_node = priority_queue[i];
                 current_index = i;
             }
@@ -85,7 +76,7 @@ Node* uniform_cost_search_with_heuristic(int maze[ROWS][COLS], int start_row, in
         }
         explored[current_row][current_col] = 1;
 
-        printf("Level: %d, Position: (%d, %d), Cost: %d, Heuristic: %d\n", level, current_row, current_col, current_node->cost, current_node->heuristic);
+        printf("Level: %d, Position: (%d, %d), Cost: %d\n", level, current_row, current_col, current_node->cost);
 
         if (current_row == goal_row && current_col == goal_col) {
             return current_node;
@@ -101,8 +92,7 @@ Node* uniform_cost_search_with_heuristic(int maze[ROWS][COLS], int start_row, in
 
             if (!explored[neighbor_row][neighbor_col] && maze[neighbor_row][neighbor_col] != 1) {
                 int new_cost = current_node->cost + 1;
-                int heuristic = manhattan_distance(neighbor_row, neighbor_col, goal_row, goal_col);
-                Node* neighbor_node = create_node(neighbor_row, neighbor_col, new_cost, heuristic, current_node);
+                Node* neighbor_node = create_node(neighbor_row, neighbor_col, new_cost, current_node);
                 priority_queue[pq_size++] = neighbor_node;
             }
         }
@@ -164,7 +154,7 @@ int main() {
     int start_row = 6, start_col = 0;
     int goal_row = 0, goal_col = 5;
 
-    Node* result = uniform_cost_search_with_heuristic(maze, start_row, start_col, goal_row, goal_col);
+    Node* result = uniform_cost_search(maze, start_row, start_col, goal_row, goal_col);
 
     if (result) {
         printf("Path: ");
